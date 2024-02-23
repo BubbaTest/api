@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34511.84
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Alexa", "WebApiUsuarios\Alexa.csproj", "{0682A8F9-B751-430D-B0B6-FC9F1CE127B9}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{0682A8F9-B751-430D-B0B6-FC9F1CE127B9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0682A8F9-B751-430D-B0B6-FC9F1CE127B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0682A8F9-B751-430D-B0B6-FC9F1CE127B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0682A8F9-B751-430D-B0B6-FC9F1CE127B9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {47D23BBE-2466-428D-A61B-1159B41B5391}
+	EndGlobalSection
+EndGlobal
