@@ -27,42 +27,41 @@ using Alexa.DAL.Seguridad;
 using Newtonsoft.Json;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 using System.Collections;
+using Microsoft.AspNetCore.Cors;
+using System.Security.Cryptography;
 
 namespace Alexa.Controllers
 {
     [ApiController]
-    [Route("api/cuentas")]
+    [Route("endpoint/cuentas")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class CuentasController : ControllerBase
     {
         private readonly SecondaryDbContext context;
         private readonly IConfiguration configuration;
 
         public CuentasController(SecondaryDbContext context,
-            IConfiguration configuration) 
+            IConfiguration configuration)
         {
             this.context = context;
             this.configuration = configuration;
         }
 
-        [HttpPost("Connecter")] 
+        [HttpPost("Connecter")]
         public async Task<IActionResult> Connecter(string utilisatrice, string passe)
         {
-            //int Retorno = -1;
-            //string Mensaje = "Ocurrio un error no controlado";
-            //bool resultado = false;
             //var result = jsonRetorno(Retorno, Mensaje, resultado, (Retorno == 0 ? ("\"" + "EXITO" + "\"") : ("\"" + "NINGUNO" + "\"")));
+            //var vutilisatric = DecodeFrom64(utilisatrice);
 
-            //var vutilisatrice = DecodeFrom64(utilisatrice);
-
-            var usuario = await context.Usuario.FirstOrDefaultAsync(x => x.UsuarioId == utilisatrice && x.Password == passe && x.Activo==true);
+            var usuario = await context.Usuario.FirstOrDefaultAsync(x => x.UsuarioId == utilisatrice && x.Password == passe && x.Activo == true);
 
             if (usuario == null)
-            {                   
+            {
                 return NotFound(new { Retorno = -1, Mensaje = "Credenciales de logueo incorrectas", URL = "error" });
             }
             else
             {
-                var sToken = await ConstruirToken(utilisatrice);
+                var sToken = ConstruirToken(utilisatrice);
                 var olista = new List<object>();
                 DbCommand cmd;
                 DbDataReader rdr;
@@ -92,14 +91,50 @@ namespace Alexa.Controllers
                         jsonString = rdr[0].ToString() ?? "[]";
                         dynamic catalogos = JsonConvert.DeserializeObject(jsonString);
                         olista.Add(catalogos);
-                    };
+                    }
+                    ;
                 }
                 rdr.Close();
                 return Ok(olista);
             }
         }
 
-        private async Task<RespuestaAutenticacion> ConstruirToken(string utilisatrice)
+        [HttpPost("Certificados")]
+        public async Task<IActionResult> Certificados(string codigo)
+        {
+            var certificado = await context.tblcertificados
+                                           .FirstOrDefaultAsync(cust => cust.id == codigo);
+
+            if (certificado == null)
+            {
+                return NotFound();
+            }
+
+            if (certificado.Activo == false || certificado.Activo == null)
+            {
+                // Crear copia antes de la actualización
+                var certificadoAntesActualizacion = new tblcertificados
+                {
+                    id = certificado.id,
+                    Departamento = certificado.Departamento,
+                    Municipio = certificado.Municipio,
+                    NombreArchivo = certificado.NombreArchivo,
+                    Ruta = certificado.Ruta,
+                    Activo = certificado.Activo
+                };
+
+                certificado.Activo = true;
+                await context.SaveChangesAsync();
+
+                return Ok(certificadoAntesActualizacion);
+            }
+            else
+            {
+                return Unauthorized();
+            }
+        }
+
+        private RespuestaAutenticacion ConstruirToken(string utilisatrice)
         {
             var claims = new List<Claim>();
             claims = new List<Claim>()
@@ -115,7 +150,7 @@ namespace Alexa.Controllers
             var securityToken = new JwtSecurityToken(issuer: null, audience: null, claims: claims,
                 expires: expiracion, signingCredentials: creds);
 
-            await Task.Delay(10);
+            //await Task.Delay(10);
 
             return new RespuestaAutenticacion()
             {

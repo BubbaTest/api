@@ -19,11 +19,13 @@ using System.Runtime.Intrinsics.Arm;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using static System.Collections.Specialized.BitVector32;
+using Microsoft.AspNetCore.Cors;
 
 namespace Alexa.Controllers
 {
     [ApiController]
-    [Route("api/catalogos")]
+    [Route("endpoint/catalogos")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class CatalogosController : ControllerBase
     {
         private readonly CatalogsDbContext context;
@@ -53,7 +55,7 @@ namespace Alexa.Controllers
 
             while (rdr.Read())
             {
-                string jsonString = "";
+                string jsonString;
                 if (rdr[0] != null)
                 {
                     jsonString = rdr[0].ToString() ?? "[]";

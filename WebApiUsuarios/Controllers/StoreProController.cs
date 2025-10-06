@@ -25,6 +25,7 @@ namespace WebApiUsuarios.Controllers
 {
     [ApiController]
     [Route("api/sp")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class StoreProController : ControllerBase
     {
         private readonly SecondaryDbContext context;
@@ -38,11 +39,11 @@ namespace WebApiUsuarios.Controllers
         {
             string sql = "EXEC Student @UsuarioId, @Pass";
             List<SqlParameter> parms = new List<SqlParameter>
-    {
-        // Create parameter(s)    
-        new SqlParameter { ParameterName = "@UsuarioId", Value = Idss },
-        new SqlParameter { ParameterName = "@Pass", Value = pass }
-    };
+            {
+                // Create parameter(s)    
+                new SqlParameter { ParameterName = "@UsuarioId", Value = Idss },
+                new SqlParameter { ParameterName = "@Pass", Value = pass }
+            };
             //var Sqlstr = "EXEC Student @UsuarioId=" + Idss + ,"@Pass=" + pass;
             var studentList = await context.Usuario.FromSqlRaw(sql, parms.ToArray()).ToListAsync();
             return Ok(studentList);

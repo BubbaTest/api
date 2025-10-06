@@ -1,0 +1,24 @@
+===== ERROR 404 =====
+Fecha: 2025-09-27 09:14:22
+Ruta: /endpoint/cipp/Einkommen/LORTIZ/Autoriza
+Método: POST
+Respuesta: {"mensaje":"Acceso denegado. Credenciales Invalidas."}
+
+===== ERROR 404 =====
+Fecha: 2025-09-27 09:15:14
+Ruta: /endpoint/cipp/Einkommen/LORTIZ/Autoriza
+Método: POST
+Respuesta: {"mensaje":"Acceso denegado. Credenciales Invalidas."}
+
+===== ERROR 405 =====
+Fecha: 2025-09-27 09:39:24
+Ruta: /endpoint/cipp/Einkommen/LORTIZ/Autoriza
+Método: GET
+Respuesta: 
+
+===== ERROR 404 =====
+Fecha: 2025-09-27 09:40:52
+Ruta: /endpoint/cipp/Einkommen/LORTIZ/Autoriza
+Método: POST
+Respuesta: {"mensaje":"Acceso denegado. Credenciales Invalidas."}
+

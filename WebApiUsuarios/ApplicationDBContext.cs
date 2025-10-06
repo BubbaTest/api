@@ -7,57 +7,82 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Threading.Tasks;
-using Alexa.DAL.Catalogos;
-using Alexa.DAL.Catalogos.UsoEdificacion;
-using Alexa.DAL.Catalogos.ResidentesViviendaIdentificacionHogar;
-using Alexa.DAL.Catalogos.IdentificacionUbicacionGeografica;
-using Alexa.DAL.Catalogos.DatosVivienda;
-using Alexa.DAL.Catalogos.CaracteristicasHogar;
-using Alexa.DAL.Catalogos.CaracteristicasPersonas;
-using Alexa.DAL.Catalogos.DefuncionesHogar;
-using Alexa.DAL.Catalogos.ResultadoEntrevista;
-using Alexa.DAL.Catalogos.CensoEconomico;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using Alexa.DAL;
 using Alexa.DAL.Seguridad;
+using Alexa.DAL.IPC;
+using Alexa.DAL.IPP;
+using Alexa.DAL.Certificado;
 
 namespace Alexa
 {
-    //public sealed class ApplicationDBContext : IdentityDbContext 
-    //{
-    //    public ApplicationDBContext(DbContextOptions<ApplicationDBContext> options) : base(options)
-    //    {
-    //    }
-
-    //    protected override void OnModelCreating(ModelBuilder modelBuilder)
-    //    {
-    //        base.OnModelCreating(modelBuilder);
-
-    //        modelBuilder.Entity<AutorLibro>()
-    //            .HasKey(al => new { al.LibroId, al.AutorId });
-    //    }
-
-    //    public DbSet<Usuario> Usuario { get; set; }
-    //    public DbSet<Rol> Rol { get; set; }
-    //    public DbSet<relUsuarioRol> relUsuarioRol { get; set; }
-    //    public DbSet<test> test { get; set; }
-
-    //    public DbSet<Autor> Autor { get; set; }
-    //    public DbSet<Libro> Libro { get; set; }
-    //    public DbSet<Comentario> Comentario { get; set; }
-
-    //    public DbSet<AutorLibro> AutorLibro { get; set;}
-    //}
-
     public class SecondaryDbContext : DbContext
     {
         public SecondaryDbContext(DbContextOptions<SecondaryDbContext> options) : base(options)
         {
         }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+        }
+
         public DbSet<Usuario> Usuario { get; set; }
         public DbSet<Rol> Rol { get; set; }
         public DbSet<relUsuarioRol> relUsuarioRol { get; set; }
+        public DbSet<tblcertificados> tblcertificados { get; set; }
+    }
+
+    public class EinkommenDbContext : DbContext
+    {
+        public EinkommenDbContext(DbContextOptions<EinkommenDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<Usuario> Usuario { get; set; }
+        public DbSet<SessionLog> SessionLogs { get; set; }
+        public DbSet<relUsuarioRol> relUsuarioRol { get; set; }
+
+    }
+
+    public class CenagroDbContext : DbContext
+    {
+        public CenagroDbContext(DbContextOptions<CenagroDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<Usuario> Usuario { get; set; }
+        public DbSet<SessionLog> SessionLogs { get; set; }
+        public DbSet<relUsuarioRol> relUsuarioRol { get; set; }
+        public DbSet<Certificados> Certificados { get; set; }
+
+    }
+
+    public class SisanomDbContext : DbContext
+    {
+        public SisanomDbContext(DbContextOptions<SisanomDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<Usuario> Usuario { get; set; }
+        public DbSet<SessionLog> SessionLogs { get; set; }
+        public DbSet<relUsuarioRol> relUsuarioRol { get; set; }
+
+    }
+
+    public class CapacitacionDbContext : DbContext
+    {
+        public CapacitacionDbContext(DbContextOptions<CapacitacionDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<user> users { get; set; }
+        public DbSet<Usuario> Usuario { get; set; }
+        public DbSet<SessionLog> SessionLogs { get; set; }
+        public DbSet<relUsuarioRol> relUsuarioRol { get; set; }
+        public DbSet<DatosPuntosMapa> DatosPuntosMapas { get; set; }
+
     }
 
     public class CatalogsDbContext : DbContext
@@ -65,76 +90,147 @@ namespace Alexa
         public CatalogsDbContext(DbContextOptions<CatalogsDbContext> options) : base(options)
         {
         }
-       
+    }
 
-        //General
-        public DbSet<CatSiNo> CatSiNo { get; set; }
+    public class IpcDbContext : DbContext
+    {
+        public IpcDbContext(DbContextOptions<IpcDbContext> options) : base(options)
+        {
+        }
 
-        //IdentificacionUbicacionGeografica
-        public DbSet<CatS01AP02> CatS01AP02 { get; set; }
-        public DbSet<CatS01AP03> CatS01AP03 { get; set; }
-        public DbSet<CatS01AP06> CatS01AP06 { get; set; }
-        public DbSet<CatS01AP07> CatS01AP07 { get; set; }
-        public DbSet<CatS01AP08> CatS01AP08 { get; set; }
-        public DbSet<CatS01AP10> CatS01AP10 { get; set; }
-        public DbSet<CatS01AP11> CatS01AP11 { get; set; }
-        public DbSet<CatS01AP12> CatS01AP12 { get; set; }
+        public DbSet<EnumeradorInformante> EnumeradorInformante { get; set; }
 
-        //UsoEdificacion
-        public DbSet<CatS01BP01> CatS01BP01 { get; set; }
+        public DbSet<Muestras> Muestras { get; set; }
 
-        //ResidentesViviendaIdentificacionHogar
-        public DbSet<CatS02P01> CatS02P01 { get; set; }
+        public DbSet<Informantes> Informantes { get; set; }
 
-        //DatosVivienda
-        public DbSet<CatS03P01> CatS03P01 { get; set; }
-        public DbSet<CatS03P02> CatS03P02 { get; set; }
-        public DbSet<CatS03P03> CatS03P03 { get; set; }
-        public DbSet<CatS03P04> CatS03P04 { get; set; }
-        public DbSet<CatS03P05> CatS03P05 { get; set; }
-        public DbSet<CatS03P06> CatS03P06 { get; set; }
-        public DbSet<CatS03P07> CatS03P07 { get; set; }
-        public DbSet<CatS03P08> CatS03P08 { get; set; }
-        public DbSet<CatS03P09> CatS03P09 { get; set; }
-        public DbSet<CatS03P10_1> CatS03P10_1 { get; set; }
-        public DbSet<CatS03P11_1> CatS03P11_1 { get; set; }
-        public DbSet<CatS03P12_1> CatS03P12_1 { get; set; }
+        public DbSet<Variedades> Variedades { get; set; }
 
-        //CaracteristicasHogar
-        public DbSet<CatS04P02> CatS04P02 { get; set; }
-        public DbSet<CatS04P03> CatS04P03 { get; set; }
-        public DbSet<CatS04P04> CatS04P04 { get; set; }
+        public DbSet<DiasSemana> DiasSemana { get; set; }
 
-        //CaracteristicasPersonas
-        public DbSet<CatS06P01> CatS06P01 { get; set; }
-        public DbSet<CatS06P01A> CatS06P01A { get; set; }
-        public DbSet<CatS06P02> CatS06P02 { get; set; }
-        public DbSet<CatS06P04> CatS06P04 { get; set; }
-        public DbSet<CatS06P05> CatS06P05 { get; set; }
-        public DbSet<CatS06P06> CatS06P06 { get; set; }
-        public DbSet<CatS06P08> CatS06P08 { get; set; }
-        public DbSet<CatS06P09> CatS06P09 { get; set; }
-        public DbSet<CatS06P12_1> CatS06P12_1 { get; set; }
-        public DbSet<CatS06P14> CatS06P14 { get; set; }
-        public DbSet<CatS06P16> CatS06P16 { get; set; }
-        public DbSet<CatS06P17_1> CatS06P17_1 { get; set; }
-        public DbSet<CatS06P19_2> CatS06P19_2 { get; set; }
-        public DbSet<CatS06P24> CatS06P24 { get; set; }
-        public DbSet<CatS06P26> CatS06P26 { get; set; }
-        public DbSet<CatS06P29> CatS06P29 { get; set; }
-        public DbSet<CatS06P34> CatS06P34 { get; set; }
-        public DbSet<CatS06P35> CatS06P35 { get; set; }
+        public DbSet<UmedP> UmedP { get; set; }
 
-        //DefuncionesHogar
-        public DbSet<CatS08P07> CatS08P07 { get; set; }
+        public DbSet<SeriesPrecios> SeriesPrecios { get; set; }
+        public DbSet<LoginUsuarios> LoginUsuarios { get; set; }
 
-        //ResultadoEntrevista
-        public DbSet<CatRESULTADO> CatRESULTADO { get; set; }
+        public DbSet<CampoMuestrasSeriePrecios> CampoMuestrasSeriePrecios { get; set; }
 
-        //CensoEconomico
-        public DbSet<CatRESULTADOEE> CatRESULTADOEE { get; set; }
-        public DbSet<CatSE03P05> CatSE03P05 { get; set; }
-        public DbSet<CatSE03P06> CatSE03P06 { get; set; }
-        public DbSet<CatSE03P07> CatSE03P07 { get; set; }
-    } 
+        public DbSet<VariedadSemana> VariedadSemana { get; set; }
+        public DbSet<RegionDistrito> RegionDistrito { get; set; }
+        public DbSet<CampoInformantes> CampoInformantes { get; set; }
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+
+            // Configurar clave compuesta para EnumeradorInformante
+            modelBuilder.Entity<EnumeradorInformante>()
+                .HasKey(ei => new { ei.CodInformante, ei.IdEmpleado }); // Clave compuesta
+
+            // Configurar clave compuesta para Muestras
+            modelBuilder.Entity<Muestras>()
+                .HasKey(m => new { m.InformanteId, m.VariedadId }); // Clave compuesta
+
+            // Configurar clave compuesta para Muestras
+            modelBuilder.Entity<Variedades>()
+                .HasKey(m => new { m.Id, m.InformanteId }); // Clave compuesta
+
+            // Configurar clave compuesta para Umedo
+            modelBuilder.Entity<UmedP>()
+                .HasKey(m => new { m.Codproducto, m.Urecol }); // Clave compuesta
+
+            // Configurar clave compuesta para Umedo
+            modelBuilder.Entity<CampoMuestrasSeriePrecios>()
+                .HasKey(m => new { m.InformanteId, m.VariedadId, m.Fecha }); // Clave compuesta
+
+            modelBuilder.Entity<SeriesPrecios>()
+               .HasKey(m => new { m.InformanteId, m.VariedadId, m.Anio, m.Mes, m.Semana }); // Clave compuesta
+
+            modelBuilder.Entity<VariedadSemana>()
+              .HasKey(m => new { m.Informante, m.Variedad, m.semana }); // Clave compuesta
+
+            modelBuilder.Entity<CampoInformantes>()
+              .HasKey(m => new { m.CodInformante, m.Anio, m.Mes, m.Semana }); // Clave compuesta
+
+            //modelBuilder.Entity<Informantes>()
+            //  .HasKey(m => new { m.CodInformante, m.IdEmpleado }); // Clave compuesta
+
+
+            // Asignar la entidad Muestras al esquema Ipc
+            modelBuilder.Entity<Muestras>().ToTable("Muestras", "Ipc");
+            modelBuilder.Entity<Informantes>().ToTable("Informantes", "Ipc");
+            modelBuilder.Entity<Variedades>().ToTable("Variedades", "Ipc");
+            modelBuilder.Entity<SeriesPrecios>().ToTable("SeriesPrecios", "Ipc");
+            modelBuilder.Entity<CampoMuestrasSeriePrecios>().ToTable("CampoMuestrasSeriePrecios", "Ipc");
+            modelBuilder.Entity<CampoInformantes>().ToTable("CampoInformantes", "Ipc");
+        }
+    }
+
+    public class IppDbContext : DbContext
+    {
+        public IppDbContext(DbContextOptions<IppDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<CatCatalogo> CatCatalogo { get; set; }
+        public DbSet<AsignacionPersonal> AsignacionPersonal { get; set; }
+        public DbSet<CatCalendario> CatCalendario { get; set; }
+        public DbSet<CatCanasta> CatCanasta { get; set; }
+        public DbSet<CatEstablecimiento> CatEstablecimiento { get; set; }
+        public DbSet<CatTipoCambio> CatTipoCambio { get; set; }
+        public DbSet<CatUMedVar> CatUMedVar { get; set; }
+        public DbSet<CatUnidadMedida> CatUnidadMedida { get; set; }
+        public DbSet<CatValorCatalogo> CatValorCatalogo { get; set; }
+        public DbSet<CatVariedad> CatVariedad { get; set; }
+        public DbSet<Detalle> Detalle { get; set; }
+        public DbSet<EstablecimientoCanasta> EstablecimientoCanasta { get; set; }
+        public DbSet<Muestra> Muestra { get; set; }
+        public DbSet<SEC_EMPLEADO> SEC_EMPLEADO { get; set; }
+        public DbSet<SEC_MUNI> SEC_MUNI { get; set; }
+        public DbSet<AsignarZona> AsignarZona { get; set; }
+        public DbSet<UsuarioIPP> Usuario { get; set; }
+        public DbSet<SessionLog> SessionLogs { get; set; }
+        public DbSet<relUsuarioRol> relUsuarioRol { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+
+            // Configurar clave compuesta para EnumeradorInformante
+            modelBuilder.Entity<Detalle>()
+                .HasKey(ei => new { ei.ObjIdEstablecimientoCanasta, ei.ObjIdCatVariedad, ei.FechaDefinidaRecoleccion }); // Clave compuesta
+
+            modelBuilder.Entity<EstablecimientoCanasta>()
+                .HasOne(ec => ec.CatEstablecimiento)
+                .WithMany()
+                .HasForeignKey(ec => ec.ObjIdCatEstablecimiento)
+                .OnDelete(DeleteBehavior.NoAction);  // Opciones: NoAction, Restrict, SetNull
+
+            // Asignar la entidad Muestras al esquema Ipc
+            modelBuilder.Entity<Detalle>().ToTable("Detalle", "dbo");
+            modelBuilder.Entity<UsuarioIPP>().ToTable("Usuario", "sde");
+        }
+    }
+
+    public class IppDeskDbContext : DbContext
+    {
+        public IppDeskDbContext(DbContextOptions<IppDeskDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<Usuario> Usuario { get; set; }
+        public DbSet<SessionLog> SessionLogs { get; set; }
+        public DbSet<relUsuarioRol> relUsuarioRol { get; set; }
+
+
+    }
+
+    public class ArtemisaDbContext : DbContext
+    {
+        public ArtemisaDbContext(DbContextOptions<ArtemisaDbContext> options) : base(options)
+        {
+        }
+
+        public DbSet<Usuario> Usuario { get; set; }
+        public DbSet<SessionLog> SessionLogs { get; set; }
+        public DbSet<relUsuarioRol> relUsuarioRol { get; set; }
+
+    }
 }
