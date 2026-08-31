@@ -26,5 +26,7 @@
         public string? ObservacionEnumerador { get; set; }
         public DateTime? FechaCreacion { get; set; }
         public string? CreadoPor { get; set; }
+        public DateTime? UltimaModificacion { get; set; }
+        public string? ModificadoPor { get; set; }
     }
 }

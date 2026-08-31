@@ -1,6 +1,7 @@
 ﻿using Alexa.DAL.IPC;
 using Alexa.DAL.Seguridad;
 using Alexa.DTOs;
+using Alexa.Filters;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -15,10 +16,12 @@ namespace Alexa.Controllers
     public class CipcController : ControllerBase
     {
         private readonly IpcDbContext context;
+        private readonly IConfiguration configuration;
 
-        public CipcController(IpcDbContext context)
+        public CipcController(IpcDbContext context, IConfiguration configuration)
         {
             this.context = context;
+            this.configuration = configuration;
         }
 
         [HttpGet]
@@ -475,6 +478,7 @@ namespace Alexa.Controllers
             }
         }
 
+        [NoCache]
         [HttpGet("Validamuestra/{empleado}/{semana}/{dia}")]
         public async Task<IActionResult> Validamuestra([FromRoute] string empleado, [FromRoute] int semana, [FromRoute] string dia)
         {
@@ -507,8 +511,8 @@ namespace Alexa.Controllers
                                 }).Distinct().ToListAsync();
 
             // Establecer encabezados para evitar caché
-            Response.Headers["Cache-Control"] = "no-store";
-            Response.Headers["Pragma"] = "no-cache";
+            //Response.Headers["Cache-Control"] = "no-store";
+            //Response.Headers["Pragma"] = "no-cache";
 
             if (querys.Count > 0)
             {
@@ -519,6 +523,7 @@ namespace Alexa.Controllers
             return Ok(querys);
         }
 
+        [NoCache]
         [HttpGet("Validamuestraanterior/{empleado}")]
         public async Task<IActionResult> Validamuestraanterior([FromRoute] string empleado)
         {
@@ -552,8 +557,8 @@ namespace Alexa.Controllers
                                 }).Distinct().ToListAsync();
 
             // Establecer encabezados para evitar caché
-            Response.Headers["Cache-Control"] = "no-store";
-            Response.Headers["Pragma"] = "no-cache";
+            //Response.Headers["Cache-Control"] = "no-store";
+            //Response.Headers["Pragma"] = "no-cache";
 
             if (querys.Count > 0)
             {
@@ -855,8 +860,8 @@ namespace Alexa.Controllers
                             existing.PrecioSustituidoR = item.PrecioSustituidoR;
                             existing.PrecioSustituidoC = item.PrecioSustituidoC;
                             existing.ObservacionEnumerador = item.ObservacionEnumerador;
-                            existing.FechaCreacion = item.FechaCreacion;
-                            existing.CreadoPor = item.CreadoPor;
+                            existing.UltimaModificacion = DateTime.Now;
+                            existing.ModificadoPor = item.CreadoPor;
                         }
                         else
                         {

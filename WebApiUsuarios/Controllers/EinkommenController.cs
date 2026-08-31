@@ -1,17 +1,17 @@
-﻿using Alexa.DTOs;
+﻿using Alexa.DAL.Seguridad;
+using Alexa.DTOs;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using Newtonsoft.Json;
 using System.Data;
 using System.Data.Common;
-using Newtonsoft.Json;
-using Alexa.DAL.Seguridad;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace Alexa.Controllers
 {
@@ -95,7 +95,47 @@ namespace Alexa.Controllers
             }
         }
 
+        [HttpPost("RefreshToken")]
+        [Authorize]
+        public IActionResult Refresh()
+        {
+            var utilisatrice = User.FindFirst("UTILISATRICE")?.Value;
+            if (string.IsNullOrEmpty(utilisatrice)) return Unauthorized();
+
+            var token = ConstruirToken(utilisatrice);
+            return Ok(token);
+        }
+
         private RespuestaAutenticacion ConstruirToken(string utilisatrice)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim("UTILISATRICE", utilisatrice),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var expirationHours = configuration.GetValue<int>("JWT:ExpiresInHours", 12);
+            var expiracion = DateTime.UtcNow.AddHours(expirationHours);
+
+            var securityToken = new JwtSecurityToken(
+                issuer: configuration["JWT:Issuer"],
+                audience: configuration["JWT:Audience"],
+                claims: claims,
+                expires: expiracion,
+                signingCredentials: creds
+            );
+
+            return new RespuestaAutenticacion()
+            {
+                Token = new JwtSecurityTokenHandler().WriteToken(securityToken),
+                Expiracion = expiracion
+            };
+        }
+
+        private RespuestaAutenticacion ConstruirToken1(string utilisatrice)
         {
             var claims = new List<Claim>();
             claims = new List<Claim>()

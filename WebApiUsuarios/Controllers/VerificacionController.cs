@@ -1,36 +1,35 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Alexa.DAL;
+using Alexa.DAL.Seguridad;
 using Alexa.DTOs;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-
+using Alexa.Servicios;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.EntityFrameworkCore.SqlServer;
+using Microsoft.EntityFrameworkCore.Storage;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.Net.Http.Headers;
+using Newtonsoft.Json;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
-
-using Microsoft.EntityFrameworkCore.SqlServer;
-using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.AspNetCore.DataProtection;
-using Alexa.Servicios;
-using Alexa.DAL;
-using Alexa.DAL.Seguridad;
-using Newtonsoft.Json;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
-using System.Collections;
-using Microsoft.AspNetCore.Cors;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Net.Http.Headers;
 
 namespace Alexa.Controllers
 {
@@ -52,57 +51,137 @@ namespace Alexa.Controllers
         [HttpPost("Connecter")]
         public async Task<IActionResult> Connecter(string utilisatrice, string passe)
         {
-            var q = await  (from cust in context.Usuario
-                    join ord in context.relUsuarioRol 
-                    on new { a = cust.UsuarioId } equals new { a = ord.UsuarioId } into ps
-                    from ord in ps.DefaultIfEmpty()
-                    where cust.UsuarioId == utilisatrice && cust.Password == passe && cust.Activo == true && ord.RolId == "SupervisorCenso"
-                    select cust).ToListAsync();
+            //var usuarioValido1 = await (from cust in context.Usuario
+            //                           join ord in context.relUsuarioRol
+            //                           on new { a = cust.UsuarioId } equals new { a = ord.UsuarioId } into ps
+            //                           from ord in ps.DefaultIfEmpty()
+            //                           where cust.UsuarioId == utilisatrice && cust.Password == passe && cust.Activo == true && ord.RolId == "SupervisorCenso"
+            //                           select cust).ToListAsync();
+            var usuarioValido = await (from u in context.Usuario
+                                       join r in context.relUsuarioRol on u.UsuarioId equals r.UsuarioId
+                                       where u.UsuarioId == utilisatrice && u.Password == passe && u.Activo == true && r.RolId == "SupervisorCenso"
+                                       select u).AnyAsync();
 
-            if (q.Count == 0)
+
+            if (!usuarioValido)
             {
                 return NotFound(new { Retorno = -1, Mensaje = "Credenciales de logueo incorrectas", URL = "error" });
             }
-            else
+
+            // 3. Generar token
+            var sToken = ConstruirToken(utilisatrice);
+
+            // 4. Ejecutar procedimiento almacenado sde.spUsuarioValidar
+            var olista = new List<object>();
+
+            using (var cmd = context.Database.GetDbConnection().CreateCommand())
             {
-                    var sToken = ConstruirToken(utilisatrice);
-                    var olista = new List<object>();
-                    DbCommand cmd;
-                    DbDataReader rdr;
-                    string sql = "EXEC sde.spUsuarioValidar @UsuarioId, @Password, @VIN";
-                    List<SqlParameter> parms = new List<SqlParameter>
-                    { 
-                        // Create parameters    
-                        new SqlParameter { ParameterName = "@UsuarioId", Value = utilisatrice },
-                        new SqlParameter { ParameterName = "@Password", Value = passe },
-                        new SqlParameter { ParameterName = "@VIN", Value = sToken.Token }
-                    };
-                    cmd = context.Database.GetDbConnection().CreateCommand();
-                    cmd.Parameters.AddRange(parms.ToArray());
-                    cmd.CommandText = sql;
+                cmd.CommandText = "EXEC sde.spUsuarioValidar @UsuarioId, @Password, @sistema, @session, @ip, @VIN";
+                cmd.Parameters.Add(new SqlParameter("@UsuarioId", utilisatrice));
+                cmd.Parameters.Add(new SqlParameter("@Password", passe));
+                cmd.Parameters.Add(new SqlParameter("@VIN", sToken.Token));
 
-                    // Open database connection  
-                    context.Database.OpenConnection();
+                if (cmd.Connection.State != ConnectionState.Open)
+                {
+                    await cmd.Connection.OpenAsync();
+                }
 
-                    // Create a DataReader  
-                    rdr = await cmd.ExecuteReaderAsync(CommandBehavior.CloseConnection);
-
-                    while (rdr.Read())
+                using (var rdr = await cmd.ExecuteReaderAsync())
+                {
+                    while (await rdr.ReadAsync())
                     {
-                        string jsonString = "";
-                        if (rdr[0] != null)
+                        if (rdr[0] != null && rdr[0] != DBNull.Value)
                         {
-                            jsonString = rdr[0].ToString() ?? "[]";
+                            string jsonString = rdr[0].ToString() ?? "[]";
                             dynamic catalogos = JsonConvert.DeserializeObject(jsonString);
                             olista.Add(catalogos);
-                        };
+                        }
                     }
-                    rdr.Close();
-                    return Ok(olista);
+                }
             }
+
+            return Ok(olista);
+
+            //else
+            //{
+            //        var sToken = ConstruirToken(utilisatrice);
+            //        var olista = new List<object>();
+            //        DbCommand cmd;
+            //        DbDataReader rdr;
+            //        string sql = "EXEC sde.spUsuarioValidar @UsuarioId, @Password, @VIN";
+            //        List<SqlParameter> parms = new List<SqlParameter>
+            //        { 
+            //            // Create parameters    
+            //            new SqlParameter { ParameterName = "@UsuarioId", Value = utilisatrice },
+            //            new SqlParameter { ParameterName = "@Password", Value = passe },
+            //            new SqlParameter { ParameterName = "@VIN", Value = sToken.Token }
+            //        };
+            //        cmd = context.Database.GetDbConnection().CreateCommand();
+            //        cmd.Parameters.AddRange(parms.ToArray());
+            //        cmd.CommandText = sql;
+
+            //        // Open database connection  
+            //        context.Database.OpenConnection();
+
+            //        // Create a DataReader  
+            //        rdr = await cmd.ExecuteReaderAsync(CommandBehavior.CloseConnection);
+
+            //        while (rdr.Read())
+            //        {
+            //            string jsonString = "";
+            //            if (rdr[0] != null)
+            //            {
+            //                jsonString = rdr[0].ToString() ?? "[]";
+            //                dynamic catalogos = JsonConvert.DeserializeObject(jsonString);
+            //                olista.Add(catalogos);
+            //            };
+            //        }
+            //        rdr.Close();
+            //        return Ok(olista);
+            //}
+        }
+
+        [HttpPost("RefreshToken")]
+        [Authorize]
+        public IActionResult Refresh()
+        {
+            var utilisatrice = User.FindFirst("UTILISATRICE")?.Value;
+            if (string.IsNullOrEmpty(utilisatrice)) return Unauthorized();
+
+            var token = ConstruirToken(utilisatrice);
+            return Ok(token);
         }
 
         private RespuestaAutenticacion ConstruirToken(string utilisatrice)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim("UTILISATRICE", utilisatrice),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var expirationHours = configuration.GetValue<int>("JWT:ExpiresInHours", 12);
+            var expiracion = DateTime.UtcNow.AddHours(expirationHours);
+
+            var securityToken = new JwtSecurityToken(
+                issuer: configuration["JWT:Issuer"],
+                audience: configuration["JWT:Audience"],
+                claims: claims,
+                expires: expiracion,
+                signingCredentials: creds
+            );
+
+            return new RespuestaAutenticacion()
+            {
+                Token = new JwtSecurityTokenHandler().WriteToken(securityToken),
+                Expiracion = expiracion
+            };
+        }
+
+        private RespuestaAutenticacion ConstruirToken1(string utilisatrice)
         {
             var claims = new List<Claim>();
             claims = new List<Claim>()

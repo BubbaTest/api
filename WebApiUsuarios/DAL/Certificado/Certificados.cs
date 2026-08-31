@@ -5,7 +5,7 @@ namespace Alexa.DAL.Certificado
     public class Certificados
     {
         [Key]
-        public string N { get; set; }
+        public int N { get; set; }
         public string Departamento { get; set; }
         public string Municipio { get; set; }
         public string NombresApellidos { get; set; }

@@ -8,5 +8,6 @@ namespace Alexa.DAL.IPP
         public int IdCatVariedad { get; set; }
         public int ObjIdCatCanasta { get; set; }
         public string Descripcion { get; set; } = string.Empty;
+        public required string Codigo { get; set; }
     }
 }

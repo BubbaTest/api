@@ -6,5 +6,6 @@ namespace Alexa.DTOs
     {
         public IEnumerable<Detalle> Detalle { get; set; } = new List<Detalle>();
         public IEnumerable<CatEstablecimiento> CatEstablecimiento { get; set; } = new List<CatEstablecimiento>();
+        public IEnumerable<Muestra> Muestra { get; set; } = new List<Muestra>();
     }
 }

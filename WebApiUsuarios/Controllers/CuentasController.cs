@@ -59,44 +59,79 @@ namespace Alexa.Controllers
             {
                 return NotFound(new { Retorno = -1, Mensaje = "Credenciales de logueo incorrectas", URL = "error" });
             }
-            else
+
+            // 3. Generar token
+            var sToken = ConstruirToken(utilisatrice);
+
+            // 4. Ejecutar procedimiento almacenado sde.spUsuarioValidar
+            var olista = new List<object>();
+
+            using (var cmd = context.Database.GetDbConnection().CreateCommand())
             {
-                var sToken = ConstruirToken(utilisatrice);
-                var olista = new List<object>();
-                DbCommand cmd;
-                DbDataReader rdr;
-                string sql = "EXEC sde.spUsuarioValidar @UsuarioId, @Password, @VIN";
-                List<SqlParameter> parms = new List<SqlParameter>
-                { 
-                    // Create parameters    
-                    new SqlParameter { ParameterName = "@UsuarioId", Value = utilisatrice },
-                    new SqlParameter { ParameterName = "@Password", Value = passe },
-                    new SqlParameter { ParameterName = "@VIN", Value = sToken.Token }
-                };
-                cmd = context.Database.GetDbConnection().CreateCommand();
-                cmd.Parameters.AddRange(parms.ToArray());
-                cmd.CommandText = sql;
+                cmd.CommandText = "EXEC sde.spUsuarioValidar @UsuarioId, @Password, @sistema, @session, @ip, @VIN";
+                cmd.Parameters.Add(new SqlParameter("@UsuarioId", utilisatrice));
+                cmd.Parameters.Add(new SqlParameter("@Password", passe));
+                cmd.Parameters.Add(new SqlParameter("@VIN", sToken.Token));
 
-                // Open database connection  
-                context.Database.OpenConnection();
-
-                // Create a DataReader  
-                rdr = await cmd.ExecuteReaderAsync(CommandBehavior.CloseConnection);
-
-                while (rdr.Read())
+                if (cmd.Connection.State != ConnectionState.Open)
                 {
-                    string jsonString = "";
-                    if (rdr[0] != null)
-                    {
-                        jsonString = rdr[0].ToString() ?? "[]";
-                        dynamic catalogos = JsonConvert.DeserializeObject(jsonString);
-                        olista.Add(catalogos);
-                    }
-                    ;
+                    await cmd.Connection.OpenAsync();
                 }
-                rdr.Close();
-                return Ok(olista);
+
+                using (var rdr = await cmd.ExecuteReaderAsync())
+                {
+                    while (await rdr.ReadAsync())
+                    {
+                        if (rdr[0] != null && rdr[0] != DBNull.Value)
+                        {
+                            string jsonString = rdr[0].ToString() ?? "[]";
+                            dynamic catalogos = JsonConvert.DeserializeObject(jsonString);
+                            olista.Add(catalogos);
+                        }
+                    }
+                }
             }
+
+            return Ok(olista);
+
+            //else
+            //{
+            //    var sToken = ConstruirToken(utilisatrice);
+            //    var olista = new List<object>();
+            //    DbCommand cmd;
+            //    DbDataReader rdr;
+            //    string sql = "EXEC sde.spUsuarioValidar @UsuarioId, @Password, @VIN";
+            //    List<SqlParameter> parms = new List<SqlParameter>
+            //    { 
+            //        // Create parameters    
+            //        new SqlParameter { ParameterName = "@UsuarioId", Value = utilisatrice },
+            //        new SqlParameter { ParameterName = "@Password", Value = passe },
+            //        new SqlParameter { ParameterName = "@VIN", Value = sToken.Token }
+            //    };
+            //    cmd = context.Database.GetDbConnection().CreateCommand();
+            //    cmd.Parameters.AddRange(parms.ToArray());
+            //    cmd.CommandText = sql;
+
+            //    // Open database connection  
+            //    context.Database.OpenConnection();
+
+            //    // Create a DataReader  
+            //    rdr = await cmd.ExecuteReaderAsync(CommandBehavior.CloseConnection);
+
+            //    while (rdr.Read())
+            //    {
+            //        string jsonString = "";
+            //        if (rdr[0] != null)
+            //        {
+            //            jsonString = rdr[0].ToString() ?? "[]";
+            //            dynamic catalogos = JsonConvert.DeserializeObject(jsonString);
+            //            olista.Add(catalogos);
+            //        }
+            //        ;
+            //    }
+            //    rdr.Close();
+            //    return Ok(olista);
+            //}
         }
 
         [HttpPost("Certificados")]
@@ -134,7 +169,47 @@ namespace Alexa.Controllers
             }
         }
 
+        [HttpPost("RefreshToken")]
+        [Authorize]
+        public IActionResult Refresh()
+        {
+            var utilisatrice = User.FindFirst("UTILISATRICE")?.Value;
+            if (string.IsNullOrEmpty(utilisatrice)) return Unauthorized();
+
+            var token = ConstruirToken(utilisatrice);
+            return Ok(token);
+        }
+
         private RespuestaAutenticacion ConstruirToken(string utilisatrice)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim("UTILISATRICE", utilisatrice),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration["JWT:Key"]));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var expirationHours = configuration.GetValue<int>("JWT:ExpiresInHours", 12);
+            var expiracion = DateTime.UtcNow.AddHours(expirationHours);
+
+            var securityToken = new JwtSecurityToken(
+                issuer: configuration["JWT:Issuer"],
+                audience: configuration["JWT:Audience"],
+                claims: claims,
+                expires: expiracion,
+                signingCredentials: creds
+            );
+
+            return new RespuestaAutenticacion()
+            {
+                Token = new JwtSecurityTokenHandler().WriteToken(securityToken),
+                Expiracion = expiracion
+            };
+        }
+
+        private RespuestaAutenticacion ConstruirToken1(string utilisatrice)
         {
             var claims = new List<Claim>();
             claims = new List<Claim>()
